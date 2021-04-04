@@ -1,10 +1,12 @@
 'use strict';
 const express = require( 'express' );
 
+// eslint-disable-next-line no-undef
 require( 'dotenv' ).config();
 const cors = require( 'cors' );
 const server = express();
 
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT || 3000;
 
 server.listen( PORT, ()=>{
@@ -40,7 +42,7 @@ server.get( '/weather',( req,res )=>{
 } );
 
 function Weather ( X ){
-  this.forcast = X.weather.description;
+  this.forecast = X.weather.description;
   this.time = X.valid_date;
 }
 // {
