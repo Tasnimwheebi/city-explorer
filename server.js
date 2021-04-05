@@ -6,10 +6,12 @@
 const express = require( 'express' );
 const server = express();
 
+// eslint-disable-next-line no-undef
 require( 'dotenv' ).config();
 const cors = require( 'cors' );
 server.use( cors() );
 
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT || 3000;
 
 server.listen( PORT, ()=>{
@@ -89,12 +91,17 @@ server.get( '/parks',( req,res )=>{
 
 } );
 
+
 function Park ( data ) {
   this.name = data.fullName;
   this.adress = `${data.addresses[0].line1},  ${data.addresses[0].city},  ${data.addresses[0].stateCode},  ${data.addresses[0].postalCode}`;
   this.fee = data.entranceFees[0].cost;
   this.description = data.description;
   this.url = data.url;
+function Weather ( X ){
+  this.forecast = X.weather.description;
+  this.time = X.valid_date;
+
 }
 
 
