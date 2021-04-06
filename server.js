@@ -98,9 +98,6 @@ function Park ( data ) {
   this.fee = data.entranceFees[0].cost;
   this.description = data.description;
   this.url = data.url;
-function Weather ( X ){
-  this.forecast = X.weather.description;
-  this.time = X.valid_date;
 
 }
 
