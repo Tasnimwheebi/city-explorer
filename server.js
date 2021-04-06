@@ -1,22 +1,30 @@
-/* eslint-disable no-redeclare */
-/* eslint-disable camelcase */
 /* eslint-disable no-undef */
+/*  */
+/*  */
+/*  */
 'use strict';
 
 const express = require( 'express' );
 const server = express();
 
-// eslint-disable-next-line no-undef
+//
 require( 'dotenv' ).config();
 const cors = require( 'cors' );
 server.use( cors() );
-
-// eslint-disable-next-line no-undef
+const pg = require( 'pg' );
+//
 const PORT = process.env.PORT || 3000;
 
-server.listen( PORT, ()=>{
-  console.log( `Listening on PORT ${PORT}` );
+// server.get( '/location', locationHandler );
+
+server.get( '/newLocation',addNewLocation );
+
+const client = new pg.Client ( {
+  connectionString:process.env.DATABASE_URL,
+  // ssl:{rejectUnauthorized:false}
 } );
+
+
 
 const superagent = require( 'superagent' );
 
@@ -24,22 +32,62 @@ server.get( '/',( req,res )=>{
   res.send( 'CITY EXPLORER ' );
 } );
 
+
+
+
+
+
+
+function addNewLocation ( req , res ){
+  console.log( req.query );
+  let search_query = req.query.search_query;
+  let formatted_query = req.query.formatted_query;
+  let latitude = req.query.lat;
+  let longitude = req.query.lon;
+  let SQL = 'INSERT INTO locations (search_query,formatted_query,latitude ,longitude ) VALUES ($1,$2,$3,$4) RETURNING *;';
+  let safeValues = [search_query, formatted_query,latitude,longitude];
+  client.query( SQL,safeValues )
+    .then( result =>{
+      // res.send('Your data was successfuly!');
+      res.send( result.rows[0] );
+    } )
+    .catch( error=>{
+      res.send( error );
+    } );
+}
+
+
 server.get( '/location',( req,res )=>{
   let cityName = req.query.city;
   let key = process.env.GEOCODE_API_KEY;
   let localURL = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${cityName}&format=json`;
-  superagent.get( localURL )
-    .then( getData =>{
-      console.log( getData );
-      let locationData = getData.body;
+  // get data from database
+  let SQL = `SELECT * FROM locations  RETURNING *;`;
+  client.query( SQL )
+    .then( result =>{
+      // check if it is  existed in database (send the response)
+      if ( newLocation ){
+        res.send( result.rows[0] );
+        console.log( result.rows[0] );
+      }
+      // if it is not existed send request to API server
+      else
+        superagent.get( localURL )
+          .then( getData =>{
+            console.log( getData );
+            let locationData = getData.body;
+            let newLocation = new Location ( cityName ,locationData );
 
-      let newLocation = new Location ( cityName ,locationData );
-      res.send( newLocation );
-      console.log( newLocation );
-      console.log( getData );
+            res.send( newLocation );
+            console.log( newLocation );
+            console.log( getData );
 
+          } );
+          
+    } )
+    .catch ( error=>{
+      res.send( error );
     } );
-
 } );
 
 function Location( cityName ,loData ){
@@ -102,6 +150,8 @@ function Park ( data ) {
 }
 
 
+
+
 server.get( '*',( req,res )=>{
 
   let err = {
@@ -110,3 +160,12 @@ server.get( '*',( req,res )=>{
   };
   res.status( 500 ).send( err );
 } );
+
+
+client.connect()
+  .then( ()=>{
+
+    server.listen( PORT, ()=>{
+      console.log( `Listening on PORT ${PORT}` );
+    } );
+  } );
