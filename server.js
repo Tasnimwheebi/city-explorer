@@ -1,3 +1,6 @@
+/* eslint-disable no-redeclare */
+/* eslint-disable camelcase */
+/* eslint-disable quotes */
 /* eslint-disable no-undef */
 /*  */
 /*  */
@@ -15,82 +18,64 @@ const pg = require( 'pg' );
 //
 const PORT = process.env.PORT || 3000;
 
-// server.get( '/location', locationHandler );
-
-server.get( '/newLocation',addNewLocation );
+// const client = new pg.Client( process.env.DATABASE_URL ); //for local testing
 
 const client = new pg.Client ( {
   connectionString:process.env.DATABASE_URL,
-  // ssl:{rejectUnauthorized:false}
+  ssl:{rejectUnauthorized:false}
 } );
-
-
 
 const superagent = require( 'superagent' );
 
-server.get( '/',( req,res )=>{
+server.get( '/', ( req, res ) => {
   res.send( 'CITY EXPLORER ' );
 } );
 
-
-
-
-
-
-
-function addNewLocation ( req , res ){
-  console.log( req.query );
-  let search_query = req.query.search_query;
-  let formatted_query = req.query.formatted_query;
-  let latitude = req.query.lat;
-  let longitude = req.query.lon;
-  let SQL = 'INSERT INTO locations (search_query,formatted_query,latitude ,longitude ) VALUES ($1,$2,$3,$4) RETURNING *;';
-  let safeValues = [search_query, formatted_query,latitude,longitude];
-  client.query( SQL,safeValues )
-    .then( result =>{
-      // res.send('Your data was successfuly!');
-      res.send( result.rows[0] );
-    } )
-    .catch( error=>{
-      res.send( error );
-    } );
-}
-
-
-server.get( '/location',( req,res )=>{
+server.get( '/location', ( req, res ) => {
   let cityName = req.query.city;
   let key = process.env.GEOCODE_API_KEY;
   let localURL = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${cityName}&format=json`;
   // get data from database
-  let SQL = `SELECT * FROM locations  RETURNING *;`;
-  client.query( SQL )
-    .then( result =>{
-      // check if it is  existed in database (send the response)
-      if ( newLocation ){
-        res.send( result.rows[0] );
-        console.log( result.rows[0] );
-      }
-      // if it is not existed send request to API server
-      else
-        superagent.get( localURL )
-          .then( getData =>{
-            console.log( getData );
-            let locationData = getData.body;
-            let newLocation = new Location ( cityName ,locationData );
+  superagent.get( localURL )
+    .then( getData => {
+      console.log( getData );
+      let locationData = getData.body;
+      let newLocation = new Location( cityName, locationData );
+      let SQL = `SELECT * FROM locations Where search_query=$1;`;
+      let data = [cityName];
+      client.query( SQL, data )
+        .then( result => {
+          // check if it is  existed in database (send the response)
+          if ( result.rowCount ) {
 
+            res.send( result.rows[0] );
+            console.log( result.rows[0] );
+          }
+          // if it is not existed send request to API server
+          else {
+            let search_query = newLocation.search_query;
+            let formatted_query = newLocation.formatted_query;
+            let latitude = newLocation.latitude;
+            let longitude = newLocation.longitude;
             res.send( newLocation );
             console.log( newLocation );
             console.log( getData );
-
-          } );
-          
-    } )
-    .catch ( error=>{
-      res.send( error );
+            SQL = `INSERT INTO locations (search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4) RETURNING *;`;
+            let safeValues = [search_query, formatted_query, latitude, longitude];
+            client.query( SQL, safeValues )
+              .then( result => {
+                // res.send('Your data was successfuly!');
+                res.send( result.rows[0] );
+              } );
+          }
+        } )
+        .catch( error => {
+          res.send( error );
+        } );
     } );
 } );
 
-function Location( cityName ,loData ){
+function Location( cityName, loData ) {
   this.search_query = cityName;
   this.formatted_query = loData[0].display_name;
   this.latitude = loData[0].lat;
@@ -99,15 +84,15 @@ function Location( cityName ,loData ){
 }
 
 
-server.get( '/weather',( req,res )=>{
+server.get( '/weather', ( req, res ) => {
   let cityName = req.query.search_query;
   let weatherKey = process.env.WEATHER_API_KEY;
   let weatherUrl = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${weatherKey}`;
   superagent.get( weatherUrl )
-    .then( weatherData =>{
+    .then( weatherData => {
       let wData = weatherData.body;
       let weatherARR = [];
-      wData.data.map( weathX =>{
+      wData.data.map( weathX => {
         weatherARR.push( new Weather( weathX ) );
 
       } );
@@ -116,21 +101,21 @@ server.get( '/weather',( req,res )=>{
 
 } );
 
-function Weather ( wData ){
+function Weather( wData ) {
   this.forecast = wData.weather.description;
   this.time = wData.valid_date;
 }
 
 
-server.get( '/parks',( req,res )=>{
+server.get( '/parks', ( req, res ) => {
   let cityName = req.query.search_query;
   let parksKey = process.env.PARKS_API_KEY;
   let parksUrl = `https://developer.nps.gov/api/v1/parks?q=${cityName}&limit=10&api_key=${parksKey}`;
   superagent.get( parksUrl )
-    .then( parksData =>{
+    .then( parksData => {
       let pData = parksData.body;
       let parksARR = [];
-      pData.data.map( parkX =>{
+      pData.data.map( parkX => {
         parksARR.push( new Park( parkX ) );
 
       } );
@@ -140,7 +125,7 @@ server.get( '/parks',( req,res )=>{
 } );
 
 
-function Park ( data ) {
+function Park( data ) {
   this.name = data.fullName;
   this.adress = `${data.addresses[0].line1},  ${data.addresses[0].city},  ${data.addresses[0].stateCode},  ${data.addresses[0].postalCode}`;
   this.fee = data.entranceFees[0].cost;
@@ -150,9 +135,7 @@ function Park ( data ) {
 }
 
 
-
-
-server.get( '*',( req,res )=>{
+server.get( '*', ( req, res ) => {
 
   let err = {
     status: 500,
@@ -163,9 +146,9 @@ server.get( '*',( req,res )=>{
 
 
 client.connect()
-  .then( ()=>{
+  .then( () => {
 
-    server.listen( PORT, ()=>{
+    server.listen( PORT, () => {
       console.log( `Listening on PORT ${PORT}` );
     } );
   } );
