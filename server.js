@@ -75,6 +75,17 @@ server.get( '/location', ( req, res ) => {
     } );
 } );
 
+server.get( '/locationtable', ( req, res ) => {
+  let SQL = `SELECT * FROM locations;`;
+  client.query( SQL )
+    .then ( result=>{
+      res.send( result.rows );
+    } )
+    .catch( error=>{
+      res.send( error );
+    } );
+} );
+
 function Location( cityName, loData ) {
   this.search_query = cityName;
   this.formatted_query = loData[0].display_name;
