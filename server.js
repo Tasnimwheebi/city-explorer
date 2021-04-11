@@ -18,12 +18,12 @@ const pg = require( 'pg' );
 //
 const PORT = process.env.PORT || 3000;
 
-// const client = new pg.Client( process.env.DATABASE_URL ); //for local testing
+const client = new pg.Client( process.env.DATABASE_URL ); //for local testing
 
-const client = new pg.Client ( {
-  connectionString:process.env.DATABASE_URL,
-  ssl:{rejectUnauthorized:false}
-} );
+// const client = new pg.Client ( {
+//   connectionString:process.env.DATABASE_URL,
+//   ssl:{rejectUnauthorized:false}
+// } );
 
 const superagent = require( 'superagent' );
 
