@@ -18,7 +18,7 @@ const pg = require( 'pg' );
 //
 const PORT = process.env.PORT || 3000;
 
-// const client = new pg.Client( process.env.DATABASE_URL ); //for local testing
+const client = new pg.Client( process.env.DATABASE_URL ); //for local testing
 
 const client = new pg.Client ( {
   connectionString:process.env.DATABASE_URL,
@@ -145,7 +145,42 @@ function Park( data ) {
 
 }
 
+server.get( '/movies',( req,res )=>{
+  let cityName = req.query.search_query;
+  let keyMovie = process.env.MOVIE_API_KEY;
+  let movieUrl = `https://api.themoviedb.org/3/search/movie?api_key=${keyMovie}&query=${cityName}`;
+  superagent.get( movieUrl )
+    .then( movieData => {
+      let mData = movieData.body.results;
+      let movieARR = [];
+      mData.map( dataM => {
+        movieARR.push( new Movie ( dataM ) );
 
+      } );
+      res.send( movieARR );
+    } );
+} );
+
+function Movie ( data ) {
+  this.title = data.original_title;
+  this.overview = data.overview;
+  this.average_votes = data.average_votes;
+  this.total_votes = data.total_votes;
+  this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
+  this.popularity = data.popularity;
+  this.released_on = data.released_on;
+
+}
+
+//  {
+//     "title": "Sleepless in Seattle",
+//     "overview": "A young boy who tries to set his dad up on a date after the death of his mother. He calls into a radio station to talk about his dad’s loneliness which soon leads the dad into meeting a Journalist Annie who flies to Seattle to write a story about the boy and his dad. Yet Annie ends up with more than just a story in this popular romantic comedy.",
+//     "average_votes": "6.60",
+//     "total_votes": "881",
+//     "image_url": "https://image.tmdb.org/t/p/w500/afkYP15OeUOD0tFEmj6VvejuOcz.jpg",
+//     "popularity": "8.2340",
+//     "released_on": "1993-06-24"
+//   },
 server.get( '*', ( req, res ) => {
 
   let err = {
