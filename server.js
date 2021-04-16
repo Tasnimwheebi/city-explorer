@@ -172,7 +172,33 @@ function Movie ( data ) {
   this.released_on = data.released_on;
 
 }
+function Yelp (dataYelp){
+this.name = dataYelp.name;
+this.image_url = dataYelp.image_url;
+this.price = dataYelp.price;
+this.rating = dataYelp.rating;
+this.url = dataYelp.url;
+}
 
+
+server.get('/yelp' ,(req,res)=>{
+let cityName = req.query.search_query;
+let key = process.env.YELP_API_KEY;
+let pageNumbers=5;
+    let page=req.query.page;
+const start=((page-1)* pageNumbers +1);
+    let URL=`https://api.yelp.com/v3/businesses/search?location=${cityName}&limit=${pageNumbers}&offset=${start}`;
+  superagent.get(URL)
+    .set('Authorization', `Bearer ${key}`)
+    .then(result=>{
+      let yelpArr = result.body.businesses.map((val)=>{
+        let newYelp = new Yelp (val);
+        return newYelp;
+      });
+     res.send(yelpArr);
+
+});
+});
 
 server.get( '*', ( req, res ) => {
 
@@ -191,4 +217,3 @@ client.connect()
       console.log( `Listening on PORT ${PORT}` );
     } );
   } );
-
